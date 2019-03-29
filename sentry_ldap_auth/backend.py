@@ -10,6 +10,10 @@ from sentry.models import (
 )
 
 
+def _log_line(line):
+    with open('/tmp/sentry.log', 'a') as f:
+        fi.write(line + '\n')
+
 class SentryLdapBackend(LDAPBackend):
     def get_or_create_user(self, username, ldap_user):
         username_field = getattr(settings, 'AUTH_LDAP_SENTRY_USERNAME_FIELD', '')
@@ -21,6 +25,7 @@ class SentryLdapBackend(LDAPBackend):
                     username = username[0]
 
         model = super(SentryLdapBackend, self).get_or_create_user(username, ldap_user)
+        _log_line('model')
         if len(model) < 1:
             return model
 
@@ -46,14 +51,18 @@ class SentryLdapBackend(LDAPBackend):
             if email:
                 UserEmail.objects.get_or_create(user=user, email=email)
 
+        _log_line('mail')
         # Check to see if we need to add the user to an organization
         if not settings.AUTH_LDAP_DEFAULT_SENTRY_ORGANIZATION:
             return model
 
+        _log_line('before org')
         # If the user is already a member of an organization, leave them be
         orgs = OrganizationMember.objects.filter(user=user)
         if orgs != None and len(orgs) > 0:
             return model
+
+        _log_line('before org filter')
 
         # Find the default organization
         organizations = Organization.objects.filter(name=settings.AUTH_LDAP_DEFAULT_SENTRY_ORGANIZATION)
@@ -72,6 +81,7 @@ class SentryLdapBackend(LDAPBackend):
             has_global_access=has_global_access,
             flags=getattr(OrganizationMember.flags, 'sso:linked'),
         )
+        _log_line('org member created')
 
         if not getattr(settings, 'AUTH_LDAP_SENTRY_SUBSCRIBE_BY_DEFAULT', True):
             UserOption.objects.set_value(
