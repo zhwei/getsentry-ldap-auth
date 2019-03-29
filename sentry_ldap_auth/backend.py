@@ -11,7 +11,7 @@ from sentry.models import (
 
 
 def _log_line(line):
-    with open('/tmp/sentry.log', 'a') as f:
+    with open('/tmp/sentry2.log', 'a') as f:
         fi.write(line + '\n')
 
 class SentryLdapBackend(LDAPBackend):
